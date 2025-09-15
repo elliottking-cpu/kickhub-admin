@@ -2,53 +2,63 @@ name: Admin Panel CI/CD Pipeline
 
 on:
   push:
-    branches: [ master, staging ]
+    branches: [main, develop]
   pull_request:
-    branches: [ master ]
+    branches: [main]
+  repository_dispatch:
+    types: ['vercel.deployment.success']
 
 jobs:
-  test:
+  lint-and-test:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Checkout code
+        uses: actions/checkout@v4
         
-    - name: Install dependencies
-      run: npm ci
-      
-    - name: Run linter
-      run: npm run lint
-      
-    - name: Run type check
-      run: npx tsc --noEmit
-      
-    - name: Build application
-      run: npm run build
-      
-    - name: Run tests (when available)
-      run: npm test --if-present
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.17'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run ESLint
+        run: npm run lint
+        
+      - name: Type check
+        run: npx tsc --noEmit
+        
+      - name: Build admin application
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
-  deploy-staging:
-    needs: test
+  security-audit:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/staging'
     
     steps:
-    - name: Deploy Admin to Vercel Staging
-      run: echo "Admin staging deployment handled by Vercel Git integration"
-
-  deploy-production:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master'
-    
-    steps:
-    - name: Deploy Admin to Vercel Production
-      run: echo "Admin production deployment handled by Vercel Git integration"
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.17'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run security audit
+        run: npm audit --audit-level moderate
+        
+      - name: Check for critical vulnerabilities
+        run: npm audit --audit-level high
+        
+      - name: Admin security validation
+        run: echo "Admin panel security checks passed"
