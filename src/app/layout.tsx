@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "KickHub Admin - System Management",
-  description: "Administrative interface for managing KickHub platform settings, content, and configurations",
+  title: "KickHub Admin Panel - System Administration",
+  description: "System administration interface for managing seasons, content, and platform settings. KickHub team access only.",
 };
 
 export default function RootLayout({
