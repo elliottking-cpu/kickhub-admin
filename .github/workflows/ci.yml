@@ -1,0 +1,54 @@
+name: Admin Panel CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, staging ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run linter
+      run: npm run lint
+      
+    - name: Run type check
+      run: npx tsc --noEmit
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Run tests (when available)
+      run: npm test --if-present
+
+  deploy-staging:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    
+    steps:
+    - name: Deploy Admin to Vercel Staging
+      run: echo "Admin staging deployment handled by Vercel Git integration"
+
+  deploy-production:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Deploy Admin to Vercel Production
+      run: echo "Admin production deployment handled by Vercel Git integration"
